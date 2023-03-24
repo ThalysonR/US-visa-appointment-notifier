@@ -1,12 +1,13 @@
-const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda')
 const {parseISO, compareAsc, isBefore, format} = require('date-fns')
 require('dotenv').config();
 
-const {delay, sendEmail, logStep} = require('./utils');
-const {siteInfo, loginCred, IS_PROD, NEXT_SCHEDULE_POLL, MAX_NUMBER_OF_POLL, NOTIFY_ON_DATE_BEFORE} = require('./config');
+const { logStep} = require('./utils');
+const {sendMessage} = require('./sns');
+const {siteInfo, loginCred, NOTIFY_ON_DATE_BEFORE} = require('./config');
 
 let isLoggedIn = false;
-let maxTries = MAX_NUMBER_OF_POLL
+let page;
 
 const login = async (page) => {
   logStep('logging in');
@@ -31,11 +32,12 @@ const login = async (page) => {
 
 const notifyMe = async (earliestDate) => {
   const formattedDate = format(earliestDate, 'dd-MM-yyyy');
-  logStep(`sending an email to schedule for ${formattedDate}`);
-  await sendEmail({
-    subject: `We found an earlier date ${formattedDate}`,
-    text: `Hurry and schedule for ${formattedDate} before it is taken.`
-  })
+  logStep(`sending an sms to schedule for ${formattedDate}`);
+
+  await sendMessage(
+    `We found an earlier date ${formattedDate}
+    Hurry and schedule for ${formattedDate} before it is taken.`
+  )
 }
 
 const checkForSchedules = async (page) => {
@@ -67,15 +69,19 @@ const checkForSchedules = async (page) => {
 }
 
 
-const process = async (browser) => {
-  logStep(`starting process with ${maxTries} tries left`);
+module.exports.handler = async () => {
+  // const browser = await puppeteer.launch(!IS_PROD ? {headless: false}: undefined);
+  logStep('launching browser');
+  browser = await chromium.puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+    headless: chromium.headless,
+    ignoreHTTPSErrors: true,
+  });
+  logStep(`starting process`);
 
-  if(maxTries-- <= 0){
-    console.log('Reached Max tries')
-    return
-  }
-
-  const page = await browser.newPage();
+  page = await browser.newPage();
 
   if(!isLoggedIn) {
      isLoggedIn = await login(page);
@@ -85,21 +91,5 @@ const process = async (browser) => {
   if(earliestDate && isBefore(earliestDate, parseISO(NOTIFY_ON_DATE_BEFORE))){
     await notifyMe(earliestDate);
   }
-
-  await delay(NEXT_SCHEDULE_POLL)
-
-  await process(browser)
 }
 
-
-(async () => {
-  const browser = await puppeteer.launch(!IS_PROD ? {headless: false}: undefined);
-
-  try{
-    await process(browser);
-  }catch(err){
-    console.error(err);
-  }
-
-  await browser.close();
-})();

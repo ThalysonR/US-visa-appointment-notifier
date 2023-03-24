@@ -1,4 +1,6 @@
 module.exports = {
+  AWS_REGION: process.env.AWS_REGION,
+  SNS_TOPIC_ARN: process.env.SNS_TOPIC_ARN,
   loginCred:{
     EMAIL: process.env.EMAIL,
     PASSWORD: process.env.PASSWORD
@@ -18,14 +20,5 @@ module.exports = {
     }
   },
   IS_PROD: process.env.NODE_ENV === 'prod',
-  NEXT_SCHEDULE_POLL: process.env.NEXT_SCHEDULE_POLL || 30_000, // default to 30 seconds
-  MAX_NUMBER_OF_POLL: process.env.MAX_NUMBER_OF_POLL || 250, // number of polls before stopping
   NOTIFY_ON_DATE_BEFORE: process.env.NOTIFY_ON_DATE_BEFORE, // in ISO format i.e YYYY-MM-DD
-
-  NOTIFY_EMAILS: process.env.NOTIFY_EMAILS, // comma separated list of emails
-  mailgun: {
-    USERNAME: process.env.MAILGUN_USERNAME,
-    DOMAIN: process.env.MAILGUN_DOMAIN,
-    API_KEY: process.env.MAILGUN_API_KEY,
-  }
 }
