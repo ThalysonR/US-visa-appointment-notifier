@@ -38,7 +38,7 @@ attach_policy_json = true
 
   publish = true
 
-  layers = [ "arn:aws:lambda:${var.aws_region}:764866452798:layer:chrome-aws-lambda:22" ]
+  layers = [ "arn:aws:lambda:${var.aws_region}:764866452798:layer:chrome-aws-lambda:31" ]
 
   runtime = "nodejs12.x"
   handler = "index.handler"

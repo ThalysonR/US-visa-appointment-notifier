@@ -1,4 +1,4 @@
-const chromium = require('chrome-aws-lambda')
+const chromium = require('@sparticuz/chrome-aws-lambda')
 const {parseISO, compareAsc, isBefore, format} = require('date-fns')
 require('dotenv').config();
 
@@ -7,7 +7,6 @@ const {sendMessage} = require('./sns');
 const {siteInfo, loginCred, NOTIFY_ON_DATE_BEFORE} = require('./config');
 
 let isLoggedIn = false;
-let page;
 
 const login = async (page) => {
   logStep('logging in');
@@ -81,11 +80,13 @@ module.exports.handler = async () => {
   });
   logStep(`starting process`);
 
-  page = await browser.newPage();
+  const page = await browser.newPage();
 
-  if(!isLoggedIn) {
-     isLoggedIn = await login(page);
-  }
+  // always login
+  await login(page);
+  // if(!isLoggedIn) {
+  //    isLoggedIn = await login(page);
+  // }
 
   const earliestDate = await checkForSchedules(page);
   if(earliestDate && isBefore(earliestDate, parseISO(NOTIFY_ON_DATE_BEFORE))){
